@@ -1,0 +1,1169 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# # Loading images path and save them into dataframe
+
+# In[1]:
+
+
+import tensorflow as tf
+import matplotlib.pyplot as plt
+import cv2
+import os
+import numpy as np
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.preprocessing import image
+from tensorflow.keras.optimizers import Adam
+
+
+# In[2]:
+
+
+img=image.load_img(r"C:\Users\aparn\Srini Real Estate-Dataset\frontyard\frontyard (5).png")
+
+
+# In[3]:
+
+
+plt.imshow(img)
+
+
+# In[4]:
+
+
+cv2.imread(r"C:\Users\aparn\Srini Real Estate-Dataset\frontyard\frontyard (5).png")
+
+
+# In[5]:
+
+
+cv2.imread(r"C:\Users\aparn\Srini Real Estate-Dataset\frontyard\frontyard (5).png").shape #Obtaining the dimensions of an image in RGB.
+
+
+# In[6]:
+
+
+from glob import glob
+import pandas as pd
+from tqdm.notebook import tqdm
+import seaborn as sns
+import cv2 as cv
+
+from warnings import filterwarnings
+filterwarnings('ignore')
+
+
+# In[7]:
+
+
+SEED = 42
+np.random.seed(SEED)
+ROOT_DIR =r"C:\Users\aparn\Srini Real Estate-Dataset/"
+
+
+# In[8]:
+
+
+list_of_classes = os.listdir(ROOT_DIR)
+list_of_classes
+
+
+# In[9]:
+
+
+backyard_images_name = os.listdir(ROOT_DIR+list_of_classes[0])
+bathroom_images_name = os.listdir(ROOT_DIR+list_of_classes[1])
+bedroom_images_name = os.listdir(ROOT_DIR+list_of_classes[2])
+frontyard_images_name = os.listdir(ROOT_DIR+list_of_classes[3])
+kitchen_images_name = os.listdir(ROOT_DIR+list_of_classes[4])
+livingroom_images_name = os.listdir(ROOT_DIR+list_of_classes[5])
+
+
+# In[10]:
+
+
+print(f"5 images name from backyard class: {backyard_images_name[:5]}")
+print(f"\n5 images name from bathroom class: {bathroom_images_name[:5]}")
+print(f"\n5 images name from bedroom class: {bedroom_images_name[:5]}")
+print(f"\n5 images name from front yard class: {frontyard_images_name[:5]}")
+print(f"\n5 images name from kitchen class: {kitchen_images_name[:5]}")
+print(f"\n5 images name from living room class: {livingroom_images_name[:5]}")
+
+
+# In[11]:
+
+
+all_images_path, labels = list(), list()
+for img_class in tqdm(list_of_classes):
+    for img in os.listdir(ROOT_DIR+img_class):
+        img_path = ROOT_DIR + img_class + "/" + img
+        all_images_path.append(img_path)
+        labels.append(img_class)
+df = pd.DataFrame()
+df['paths'] = all_images_path
+df['labels'] = labels
+df = df.sample(frac=1)
+df.to_csv('df_contains_path.csv', index=False)
+df
+
+
+# # Exploratory data analysis
+
+# In[12]:
+
+
+df.shape
+
+
+# In[13]:
+
+
+print(f"Number of images in the dataset is: {len(df['paths'])}")
+
+
+# In[14]:
+
+
+def load_image(img_path, size=None):
+    image = cv.imread(img_path, cv.IMREAD_UNCHANGED)
+    image = image[:,:,::-1]
+    if size == None:
+        return image
+    else:
+        resized_image = cv.resize(image, size, interpolation=cv.INTER_AREA)
+        return resized_image
+
+
+# In[15]:
+
+
+def get_dimensions(image_paths):
+    heights, widths, channels = list(), list(), list()
+    for img_path in tqdm(image_paths):
+        img = load_image(img_path)
+        shape = img.shape
+        if len(shape) > 2:
+            height = shape[0]
+            width = shape[1]
+            channel = shape[2]
+            heights.append(height)
+            widths.append(width)
+            channels.append(channel)
+        else:
+            height = shape[0]
+            width = shape[1]
+            heights.append(height)
+            widths.append(width)      
+    return heights, widths, channels
+
+
+# In[16]:
+
+
+height, width, channels = get_dimensions(df['paths'].values)
+
+
+# In[17]:
+
+
+print(f"Minimum height: {min(height)}, Maximum height: {max(height)}")
+print(f"Minimum width: {min(width)}, Maximum width: {max(width)}")
+print(f"Minimum channels: {min(channels)}, Maximum channels: {max(channels)}")
+
+
+# In[18]:
+
+
+plt.scatter(x=width, y=height)
+plt.xlabel('width')
+plt.ylabel('height')
+plt.title('Scatter plot between the height and width')
+plt.grid()
+plt.show()
+
+
+# In[19]:
+
+
+#print(f"0th - 100th: Percentiles for heights of images")
+#for q in range(0,101,10):
+ #   print(f"{q}th percentile: {np.percentile(height, q=q)}")
+
+
+# In[20]:
+
+
+#print(f"0th-10th: Percentiles for heights of images")
+#for q in range(0,11,1):
+ #   print(f"{q}th percentile: {np.percentile(height, q=q)}")
+
+
+# In[21]:
+
+
+#print(f"90th-100th: Percentiles for heights of images")
+#for q in range(90,101,1):
+ #   print(f"{q}th percentile: {np.percentile(height, q=q)}")
+
+
+# In[22]:
+
+
+#print(f"0th - 100th: Percentiles for width of images")
+#for q in range(0,101,10):
+ #   print(f"{q}th percentile: {np.percentile(width, q=q)}")
+
+
+# In[23]:
+
+
+#print(f"0th-10th: Percentiles for width of images")
+#for q in range(0,11,1):
+ #   print(f"{q}th percentile: {np.percentile(width, q=q)}")
+
+
+# In[24]:
+
+
+random_number = np.random.randint(0, len(df['paths']), 20)
+for rand in random_number:
+    img = load_image(df['paths'].values[rand])
+    print(f"Shape of image: {img.shape}")
+
+
+# In[25]:
+
+
+df.info()
+
+
+# In[26]:
+
+
+df.describe()
+
+
+# In[27]:
+
+
+sns.histplot(df['labels'])
+plt.title('Histogram for labels')
+plt.xticks(rotation=20)
+plt.xlabel('')
+plt.ylabel('Count')
+plt.grid()
+plt.show()
+
+
+# In[28]:
+
+
+df['labels'].value_counts()
+
+
+# # Image preprocessing
+
+# In[29]:
+
+
+def rescale(image):
+    """this function will rescale the image and will be used if requires"""
+    image = np.array(image)/255
+    return image
+
+
+# In[30]:
+
+
+def get_enhanced_image(colorimage, clipLimit=2, tileGridSize=(8,8)):
+    clahe_model = cv.createCLAHE(clipLimit=clipLimit, tileGridSize=tileGridSize)
+    colorimage_b = clahe_model.apply(colorimage[:,:,0])
+    colorimage_g = clahe_model.apply(colorimage[:,:,1])
+    colorimage_r = clahe_model.apply(colorimage[:,:,2])
+    colorimage_clahe = np.stack((colorimage_b,colorimage_g,colorimage_r), axis=2)
+    return colorimage_clahe
+
+
+# In[31]:
+
+
+def show_images(image, enhanced_image, lable='', figsize=(10,10)):
+    fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=figsize)
+    ax1.imshow(image)
+    ax1.set_title(f'Original image')
+    ax1.set_xlabel(label)    
+    ax2.imshow(enhanced_image)
+    ax2.set_title(f'CLAHE enhanced image')
+    ax2.set_xlabel(label)
+    plt.show()
+
+
+# In[32]:
+
+
+random_indices = np.random.randint(0, len(df), 10)
+for rand in random_indices:
+    path = df.values[rand][0]
+    label = df.values[rand][1]
+    image = load_image(path)
+    enhanced_image = get_enhanced_image(image)
+    show_images(image, enhanced_image)
+
+
+# # Loading and splitting images path
+
+# In[33]:
+
+
+from tqdm.notebook import tqdm
+from warnings import filterwarnings
+filterwarnings('ignore')
+import gc
+from sklearn.model_selection import train_test_split
+
+
+# In[34]:
+
+
+SEED = 42
+np.random.seed(SEED)
+tf.random.set_seed(SEED)
+ROOT_DIR = r"C:\Users\aparn\Srini Real Estate-Dataset/"
+
+
+# In[35]:
+
+
+df_paths = pd.read_csv("df_contains_path.csv")
+df_paths = df_paths.sample(frac=1)
+df_paths.shape
+
+
+# In[36]:
+
+
+train, val = train_test_split(df_paths, test_size=0.15, stratify=df_paths['labels'])
+
+
+# In[37]:
+
+
+print(f"Shape of train data: {train.shape}")
+print(f"Shape of val data: {val.shape}")
+
+
+# In[38]:
+
+
+train.to_csv('train_set.csv', index=False)
+val.to_csv('val_set.csv', index=False)
+
+
+# In[39]:
+
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+
+# In[40]:
+
+
+sns.histplot(train['labels'])
+plt.xlabel('')
+plt.title('Train data class distributions')
+plt.xticks(rotation=20)
+plt.grid()
+plt.show()
+
+
+# In[41]:
+
+
+sns.histplot(val['labels'])
+plt.xlabel('')
+plt.title('Val data class distributions')
+plt.xticks(rotation=20)
+plt.grid()
+plt.show()
+
+
+# In[42]:
+
+
+class_list = os.listdir(ROOT_DIR)
+print(f"Class labels: {class_list}")
+
+
+# In[43]:
+
+
+def to_numerical(x):
+    """this function will return the index of class list after seeing the x in it"""
+    return class_list.index(x)
+train['labels'] = train['labels'].apply(to_numerical)
+val['labels'] = val['labels'].apply(to_numerical)
+
+
+# In[44]:
+
+
+from sklearn.preprocessing import OneHotEncoder
+ohe = OneHotEncoder(sparse=False)
+y_train = ohe.fit_transform(np.array(train['labels']).reshape(-1,1))
+y_val = ohe.transform(np.array(val['labels']).reshape(-1,1))
+y_train
+
+
+# # Custom data generator
+
+# In[45]:
+
+
+BATCH_SIZE = 16
+EPOCHS = 50
+W,H = 224,224
+TARGET_SHAPE = (W,H)
+INPUT_SHAPE = (W,H,3)
+
+
+# In[46]:
+
+
+def get_enhanced_image(img, clipLimit=2, tileGridSize=(8,8)):
+    lab = cv.cvtColor(img, cv.COLOR_BGR2LAB)
+    lab_planes = list(cv.split(lab))
+    clahe = cv.createCLAHE(clipLimit=clipLimit,tileGridSize=tileGridSize)
+    lab_planes[0] = clahe.apply(lab_planes[0])
+    lab = cv.merge(lab_planes)
+    bgr = cv.cvtColor(lab, cv.COLOR_LAB2BGR)
+    return bgr
+
+
+# In[47]:
+
+
+def rescale(x):
+    """this function will return image after normalising it"""
+    return np.array(x)/255
+
+
+# In[48]:
+
+
+class Loader:
+    def __init__(self, X, y, target_shape, preprocess_func=None):
+        self.X = X
+        self.y = y
+        self.images   = self.X
+        self.labels    = self.y
+        self.target_shape = target_shape
+        self.preprocess_func = preprocess_func
+    def __getitem__(self, i):
+        image = cv.imread(self.images[i], cv.IMREAD_UNCHANGED)
+        image = cv.resize(image, self.target_shape, cv.INTER_AREA)
+        image = get_enhanced_image(image)
+        label  = self.labels[i]
+        if self.preprocess_func:
+            image = self.preprocess_func(image)
+        return image, label
+    def __len__(self):
+        return len(self.X)    
+#Generator class
+class Generator(tf.keras.utils.Sequence):   
+    def __init__(self, dataset, batch_size, shuffle=False):
+        self.dataset = dataset
+        self.batch_size = batch_size
+        self.shuffle = shuffle
+        self.indexes = np.arange(len(dataset))
+    def __getitem__(self, i):
+        start = i * self.batch_size
+        stop = (i + 1) * self.batch_size
+        images, labels = list(), list()
+        for j in range(start, stop):
+            images.append(self.dataset[j][0])
+            labels.append(self.dataset[j][1])
+        image_batch = [np.stack(data[0], axis=0) for data in zip(images, labels)]
+        label_batch = [np.stack(data[1], axis=0) for data in zip(images, labels)]
+        return (np.array(image_batch), np.array(label_batch))
+    def __len__(self):
+        return len(self.indexes) // self.batch_size
+    def on_epoch_end(self):
+        if self.shuffle:
+            self.indexes = np.random.permutation(self.indexes)
+
+
+# In[49]:
+
+
+gc.collect()
+
+
+# # Pretrained EfficientNet-B0 based model
+
+# In[50]:
+
+
+def get_test_sample_predictions(model, preprocess_func, target_shape, sample=5):
+    rand_num = np.random.randint(0, len(val['paths']), sample)
+    for i in rand_num:
+        path, label = val['paths'].values[i], val['labels'].values[i]
+        image = cv.imread(path, cv.IMREAD_UNCHANGED)
+        image = cv.resize(image, target_shape, cv.INTER_AREA)
+        image = get_enhanced_image(image)
+        image_ = preprocess_func(image) 
+        image_ = tf.expand_dims(image_, axis=0)
+        y_pred = np.argmax(model.predict(image_))
+        pred_label = class_list[y_pred]
+        plt.imshow(image)
+        plt.title(f'Actual class: {class_list[label]}')
+        plt.xlabel(f"Predicted class: {pred_label}")
+        plt.show()
+        print("\n\n--------------------------------------------\n\n")
+
+
+# In[51]:
+
+
+def plot_confusion_matrix(model, data_generator, name='model_name_here'):
+    y_predicted, y_actual = list(), list()
+    for i in data_generator:
+        image, label = i[0], i[1]
+        predicted = model.predict(image)
+        for a_label, p_label in zip(label, predicted):
+            y_predicted.append(p_label)
+            y_actual.append(a_label)
+    y_predicted = np.array([np.argmax(i) for i in y_predicted])
+    y_actual = np.array([np.argmax(i) for i in y_actual])
+    conf_mat = tf.math.confusion_matrix(y_actual, y_predicted, num_classes=6, )
+    fig, ax = plt.subplots()
+    ax = sns.heatmap(conf_mat, annot=True, fmt='d')
+    ax.set_title(f"Confusion matrix of {name} on val data")
+    ax.set_ylabel('Actual labels')
+    ax.set_xlabel('Predicted labels')
+    ax.set_xticklabels(class_list)
+    ax.set_yticklabels(class_list)
+    plt.xticks(rotation = 90)
+    plt.yticks(rotation = 0)
+    plt.show()
+
+
+# In[52]:
+
+
+from tensorflow.keras.layers import Input, Conv2D, MaxPool2D, GlobalAveragePooling2D
+from tensorflow.keras.layers import BatchNormalization, Dropout, Dense, Flatten
+from tensorflow.keras.models import Model
+
+
+# In[53]:
+
+
+tf.keras.backend.clear_session()
+
+
+# In[54]:
+
+
+from tensorflow.keras.applications.efficientnet import EfficientNetB0, preprocess_input
+
+
+# In[55]:
+
+
+tf.keras.backend.clear_session()
+
+
+# In[56]:
+
+
+# loading efficientnet model
+efn = EfficientNetB0(include_top=False, 
+                        input_shape=INPUT_SHAPE,
+                        weights='imagenet')
+for layer in efn.layers:
+    layer.trainable = False
+# summarizing pretrained efficient model
+efn.summary()
+
+
+# In[57]:
+
+
+from tensorflow.keras import layers
+# input layer
+inputs =Input(shape=INPUT_SHAPE, name='input_shape')
+# passing input layer to resnet 50
+x = efn(inputs)
+# Global pulling layer
+x = GlobalAveragePooling2D(name='global_pooling')(x)
+# Dense layer
+x = Dense(1024, activation='relu', name='dense_1')(x)
+# Dropout layer
+x = Dropout(0.5, name='dropout_1')(x)
+# Dense layer
+x = Dense(64, activation='relu', name='dense_2')(x)
+# Dropout layer
+x =Dropout(0.5, name='dropout_2')(x)
+# output layer
+outputs = Dense(6, activation='softmax', name='output')(x)
+
+# intialising model
+efficientNet_model = Model(inputs=inputs, outputs=outputs, name='efficientNet_based_model')
+# summarizing model
+efficientNet_model.summary()
+
+
+# In[58]:
+
+
+from sklearn.metrics import f1_score
+class F1_score(tf.keras.callbacks.Callback):
+    """this will return f1-score for multi labels classes"""
+    def __init__(self, data_generator):
+        super().__init__()
+        self.val_data = data_generator
+    def on_train_begin(self, logs={}):
+        logs['val_f1_score'] = float('-inf')
+    
+    def on_epoch_end(self, epoch, logs={}):
+        """f1 score calculation on validation set"""
+        y_predicted, y_actual = list(), list()
+        for i in self.val_data:
+            image, label = i[0], i[1]
+            predicted = self.model.predict(image)
+            for a_label, p_label in zip(label, predicted):
+                y_predicted.append(p_label)
+                y_actual.append(a_label)
+        y_preds = np.array([np.argmax(i) for i in y_predicted]).reshape(-1,1)
+        y_actual = np.array([np.argmax(i) for i in y_actual]).reshape(-1,1)
+        f1score = f1_score(y_actual, y_preds, average='weighted', )
+        logs['val_f1_score'] = f1score
+        print(f'      [==============================]  - val_f1_score: {round(f1score, 4)}')
+
+
+# In[59]:
+
+
+def initialise_custom_datagenerator(preprocess_func, train=train, y_train=y_train, val=val, y_val=y_val, BATCH_SIZE=1):
+    train_loader = Loader(train['paths'].values, y_train, TARGET_SHAPE, preprocess_func=preprocess_func)
+    val_loader = Loader(val['paths'].values, y_val, TARGET_SHAPE, preprocess_func=preprocess_func)
+    train_data_generator = Generator(train_loader, batch_size=BATCH_SIZE)
+    val_data_generator = Generator(val_loader, batch_size=BATCH_SIZE)
+    print(f"Custome data generator initialised successfully!")
+    return train_data_generator, val_data_generator
+
+
+# In[60]:
+
+
+BATCH_SIZE=2
+train_data_generator, val_data_generator = initialise_custom_datagenerator(preprocess_input,BATCH_SIZE=BATCH_SIZE)
+
+
+# In[61]:
+
+
+def initialise_callbacks(checkpoint_model_name):
+    f1score = F1_score(val_data_generator)
+    earlystop =  tf.keras.callbacks.EarlyStopping(monitor='val_f1_score', 
+                                              patience=5, 
+                                              min_delta=0.02,
+                                              mode='max',
+                                              verbose=1, 
+                                              restore_best_weights=True),
+    checkpoint = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_model_name,
+                                                monitor='val_f1_score', 
+                                                mode='max',
+                                                verbose=1,
+                                                save_best_only=True,
+                                                save_weights_only=True)
+    print(f"""Custom callbacks initialised successfully!\nModel checkpoint name will be: "{checkpoint_model_name}" """)
+    return [f1score, earlystop, checkpoint]
+
+
+# In[62]:
+
+
+callbacks = initialise_callbacks('efficientNetB0_model.h5')
+
+
+# In[63]:
+
+
+# compiling efficient net model
+efficientNet_model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+
+
+# In[64]:
+
+
+#fitting efficientnet  B0 model
+efficientNet_history = efficientNet_model.fit(train_data_generator, 
+                 epochs=EPOCHS, 
+                 batch_size=BATCH_SIZE, 
+                 validation_data=val_data_generator,
+                 callbacks=callbacks)
+
+
+# In[65]:
+
+
+efficientNet_history = efficientNet_history.history
+
+
+# In[66]:
+
+
+def plot_evaluation_metrics(history, name='model'):
+    """this will plot line plot between the metrics of model"""
+    # defining loss, accuracy list for train and val data
+    train_loss, val_loss = history['loss'], history['val_loss']
+    train_accuracy, val_accuracy = history['accuracy'], history['val_accuracy']
+    # val f1_score
+    val_f1_score = history['val_f1_score']
+    # list of epochs
+    epochs = [i+1 for i in range(len(val_f1_score))]
+    
+    # initialising matplotlib.pyplot plot with 3 subplots
+    print(f"""Evaluation metrics plot for "{name}" """)
+    fig, [ax1,ax2,ax3] = plt.subplots(nrows=3, ncols=1, figsize=(8,16))
+    # ploting line plot for train and val loss
+    ax1.plot(epochs, train_loss, label='Train loss')
+    ax1.plot(epochs, val_loss, label='Val loss')
+    # adding legend
+    ax1.legend()
+    # setting min train and val loss as subplot-1 title
+    ax1.set_title(f'Min train_loss: {round(min(train_loss), 4)}, Min val_loss: {round(min(val_loss), 4)}')
+    # setting labels
+    ax1.set_xlabel('epochs')
+    ax1.set_ylabel('loss')
+    ax1.grid()
+
+    # ploting line plot for train and val accuracy
+    ax2.plot(epochs, train_accuracy, label='Train accuracy')
+    ax2.plot(epochs, val_accuracy, label='Val accuracy')
+    # adding legend to the subplot
+    ax2.legend()
+    # setting Max train and val accuracy as title for the subplot 2
+    ax2.set_title(f'Max train_acc: {round(max(train_accuracy), 4)}, Max val_acc: {round(max(val_accuracy), 4)}')
+    # seting labels to the subplot
+    ax2.set_xlabel('epochs')
+    ax2.set_ylabel('accuracy')
+    ax2.grid()
+        
+    ax3.plot(epochs, val_f1_score, label='Val f1_score')
+    # adding legend to the subplot
+    ax3.legend()
+    # setting Max val f1_Score as title for the subplot 3
+    ax3.set_title(f'Max val_f1_score: {round(max(val_f1_score), 4)}')
+    # seting labels to the subplot
+    ax3.set_xlabel('epochs')
+    ax3.set_ylabel('f1_score')
+    ax3.grid()
+    
+    # ploting the figure
+    plt.show()
+
+
+# In[67]:
+
+
+plot_evaluation_metrics(efficientNet_history, name='EfficientNetB0 model')
+
+
+# In[68]:
+
+
+plot_confusion_matrix(efficientNet_model, val_data_generator, name='EfficientNetB0 model')
+
+
+# In[69]:
+
+
+get_test_sample_predictions(efficientNet_model, preprocess_input, TARGET_SHAPE, sample=15)
+
+
+# In[70]:
+
+
+gc.collect()
+
+
+# In[71]:
+
+
+from tensorflow.keras.applications.resnet import ResNet50, ResNet152, preprocess_input
+
+
+# In[72]:
+
+
+tf.keras.backend.clear_session()
+
+
+# In[73]:
+
+
+resnet50 = ResNet50(include_top=False, 
+                        input_shape=INPUT_SHAPE,
+                        weights='imagenet')
+for layer in resnet50.layers:
+    layer.trainable = False
+resnet50.summary()
+
+
+# In[74]:
+
+
+# input layer
+inputs = Input(shape=INPUT_SHAPE, name='input_shape')
+# passing input layer to resnet 50
+x = resnet50(inputs)
+# Flatten layer
+x = GlobalAveragePooling2D(name='global_pooling')(x)
+# Dense layer
+x = Dense(1024, activation='relu', name='dense_1')(x)
+# Dropout layer
+x = Dropout(0.5, name='dropout_1')(x)
+# Dense layer
+x = Dense(64, activation='relu', name='dense_2')(x)
+# Dropout layer
+x = Dropout(0.5, name='dropout_2')(x)
+# output layer
+outputs = Dense(6, activation='softmax', name='output')(x)
+
+# intialising model
+resnet50_model = Model(inputs=inputs, outputs=outputs, name='resnet50_based_model')
+# summarizing model
+resnet50_model.summary()
+
+
+# In[75]:
+
+
+resnet50_model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+
+
+# In[76]:
+
+
+BATCH_SIZE = 4
+train_data_generator, val_data_generator = initialise_custom_datagenerator(preprocess_input, BATCH_SIZE=BATCH_SIZE)
+
+
+# In[77]:
+
+
+callbacks = initialise_callbacks('resnet50_model.h5')
+
+
+# In[78]:
+
+
+# ftting data on resnet50 model
+resnet50_history = resnet50_model.fit(train_data_generator, 
+                 epochs=EPOCHS, 
+                 batch_size=BATCH_SIZE, 
+                 validation_data=val_data_generator,
+                 callbacks=callbacks)
+
+
+# In[79]:
+
+
+resnet50_history = resnet50_history.history
+
+
+# In[80]:
+
+
+plot_evaluation_metrics(resnet50_history, name='ResNet_50 model')
+
+
+# In[81]:
+
+
+plot_confusion_matrix(resnet50_model, val_data_generator, name='resnet50 model')
+
+
+# In[82]:
+
+
+get_test_sample_predictions(resnet50_model, preprocess_input, TARGET_SHAPE, sample=15)
+
+
+# In[83]:
+
+
+gc.collect()
+
+
+# # Base Model: CNN based model
+
+# In[84]:
+
+
+# Defining base model architecture
+
+# input layer
+inputs = Input(shape=INPUT_SHAPE, name='input_layer')
+# conv2d layer
+x = Conv2D(filters=2, kernel_size=(3,3), activation='relu', name='conv_11')(inputs)
+x = Conv2D(filters=4, kernel_size=(3,3), activation='relu', name='conv_12')(x)
+# maxpooling layer
+x = MaxPool2D(name='maxpool_1')(x)
+# batchnorm layer
+# x = BatchNormalization(name='batchnorm_1')(x)
+
+# conv2d layer
+x = Conv2D(filters=8, kernel_size=(3,3), activation='relu', name='conv_21')(x)
+x = Conv2D(filters=16, kernel_size=(3,3), activation='relu', name='conv_22')(x)
+# maxpooling layer
+x = MaxPool2D(name='maxpool_2')(x)
+
+# conv2d layer
+x = Conv2D(filters=32, kernel_size=(3,3), activation='relu', name='conv_31')(x)
+x = Conv2D(filters=64, kernel_size=(3,3), activation='relu', name='conv_32')(x)
+# maxpooling layer
+x = MaxPool2D(name='maxpool_3')(x)
+
+# conv2d layer
+x = Conv2D(filters=128, kernel_size=(3,3), activation='relu', name='conv_41')(x)
+x = Conv2D(filters=256, kernel_size=(3,3), activation='relu', name='conv_42')(x)
+# maxpooling layer
+x = MaxPool2D(name='maxpool_4')(x)
+
+# conv2d layer
+x = Conv2D(filters=512, kernel_size=(3,3), activation='relu', name='conv_51')(x)
+x = Conv2D(filters=1024, kernel_size=(3,3), activation='relu', name='conv_52')(x)
+# maxpooling layer
+x = MaxPool2D(name='maxpool_5')(x)
+
+# flatten layer
+x = GlobalAveragePooling2D(name='global_average_pooling')(x)
+# Dense layer 1
+x = Dense(units=1024, activation='relu', name='dense_1')(x)
+# dropout layer
+x = Dropout(0.5, name='dropout_1')(x)
+# dense layer
+x = Dense(units=64, activation='relu', name='dense_2')(x)
+# dropout layer
+x = Dropout(0.5, name='dropout_2')(x)
+# Dense layer 2
+outputs = Dense(units=6, activation='softmax', name='output_layer')(x)
+
+# initialize model
+base_model = Model(inputs=inputs, outputs=outputs, name='base_model')
+
+# summarize model
+base_model.summary()
+
+
+# In[85]:
+
+
+###=====================================================###
+###                  CUSTOM CALLBACKS                   ###
+###=====================================================###
+from sklearn.metrics import f1_score
+# difining class to calculate f1 score on validation data
+class F1_score(tf.keras.callbacks.Callback):
+    """this will return f1-score for multi labels classes"""
+    # declaring class attributes
+    def __init__(self, data_generator):
+        super().__init__()
+        self.val_data = data_generator
+    # when training begins append val_f1_score in logs to store f1_score
+    def on_train_begin(self, logs={}):
+        logs['val_f1_score'] = float('-inf')
+    
+    def on_epoch_end(self, epoch, logs={}):
+        """f1 score calculation on validation set"""
+        # empty list to store actual and predicted class labels
+        y_predicted, y_actual = list(), list()
+        # for each batch in data data
+        for i in self.val_data:
+            # spliting image data and actual labels
+            image, label = i[0], i[1]
+            # predicting labels on batch of image data
+            predicted = self.model.predict(image)
+            # for each label in batch predictions
+            for a_label, p_label in zip(label, predicted):
+                # appending predicted label to the list
+                y_predicted.append(p_label)
+                # apending actual label to the list
+                y_actual.append(a_label)
+
+        # reshaping into 1-D list after taking argmax for each class label
+        # in order to feed in sklearn metrics
+        y_preds = np.array([np.argmax(i) for i in y_predicted]).reshape(-1,1)
+        y_actual = np.array([np.argmax(i) for i in y_actual]).reshape(-1,1)
+
+        # calculating f1 score
+        f1score = f1_score(y_actual, y_preds, average='weighted', )
+        # adding val_f1_Score to the logs
+        logs['val_f1_score'] = f1score
+
+        print(f'      [==============================]  - val_f1_score: {round(f1score, 4)}')
+
+
+# In[86]:
+
+
+def initialise_custom_datagenerator(preprocess_func, train=train, y_train=y_train, val=val, y_val=y_val, BATCH_SIZE=1):
+    # initialising data loader object
+    train_loader = Loader(train['paths'].values, y_train, TARGET_SHAPE, preprocess_func=preprocess_func)
+    val_loader = Loader(val['paths'].values, y_val, TARGET_SHAPE, preprocess_func=preprocess_func)
+    # initialising custome data generator
+    train_data_generator = Generator(train_loader, batch_size=BATCH_SIZE)
+    val_data_generator = Generator(val_loader, batch_size=BATCH_SIZE)
+    print(f"Custome data generator initialised successfully!")
+    return train_data_generator, val_data_generator
+
+
+# In[87]:
+
+
+BATCH_SIZE = 32
+train_data_generator, val_data_generator = initialise_custom_datagenerator(rescale, BATCH_SIZE=BATCH_SIZE)
+
+
+# In[88]:
+
+
+def initialise_callbacks(checkpoint_model_name):
+    # initialising custom f1_score object
+    f1score = F1_score(val_data_generator)
+    # early stop call back
+    earlystop =  tf.keras.callbacks.EarlyStopping(monitor='val_f1_score', 
+                                              patience=5, 
+                                              min_delta=0.02,
+                                              mode='max',
+                                              verbose=1, 
+                                              restore_best_weights=True),
+    # model checkpoint call back
+    checkpoint = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_model_name,
+                                                monitor='val_f1_score', 
+                                                mode='max',
+                                                verbose=1,
+                                                save_best_only=True,
+                                                save_weights_only=True)
+    print(f"""Custom callbacks initialised successfully!\nModel checkpoint name will be: "{checkpoint_model_name}" """)
+    return [f1score, earlystop, checkpoint]
+
+
+# In[89]:
+
+
+callbacks = initialise_callbacks('base_model.h5')
+
+
+# In[90]:
+
+
+# compile model
+base_model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+
+
+# In[91]:
+
+
+# fitting data to the base model
+base_history = base_model.fit(train_data_generator, 
+               validation_data=val_data_generator, 
+               epochs=EPOCHS, 
+               batch_size=BATCH_SIZE, 
+               callbacks=callbacks)
+
+
+# In[92]:
+
+
+# extracting history from the model history
+base_history = base_history.history
+
+
+# In[93]:
+
+
+def plot_evaluation_metrics(history, name='model'):
+    """this will plot line plot between the metrics of model"""
+    # defining loss, accuracy list for train and val data
+    train_loss, val_loss = history['loss'], history['val_loss']
+    train_accuracy, val_accuracy = history['accuracy'], history['val_accuracy']
+    # val f1_score
+    val_f1_score = history['val_f1_score']
+    # list of epochs
+    epochs = [i+1 for i in range(len(val_f1_score))]
+    
+    # initialising matplotlib.pyplot plot with 3 subplots
+    print(f"""Evaluation metrics plot for "{name}" """)
+    fig, [ax1,ax2,ax3] = plt.subplots(nrows=3, ncols=1, figsize=(8,16))
+    # ploting line plot for train and val loss
+    ax1.plot(epochs, train_loss, label='Train loss')
+    ax1.plot(epochs, val_loss, label='Val loss')
+    # adding legend
+    ax1.legend()
+    # setting min train and val loss as subplot-1 title
+    ax1.set_title(f'Min train_loss: {round(min(train_loss), 4)}, Min val_loss: {round(min(val_loss), 4)}')
+    # setting labels
+    ax1.set_xlabel('epochs')
+    ax1.set_ylabel('loss')
+    ax1.grid()
+
+    # ploting line plot for train and val accuracy
+    ax2.plot(epochs, train_accuracy, label='Train accuracy')
+    ax2.plot(epochs, val_accuracy, label='Val accuracy')
+    # adding legend to the subplot
+    ax2.legend()
+    # setting Max train and val accuracy as title for the subplot 2
+    ax2.set_title(f'Max train_acc: {round(max(train_accuracy), 4)}, Max val_acc: {round(max(val_accuracy), 4)}')
+    # seting labels to the subplot
+    ax2.set_xlabel('epochs')
+    ax2.set_ylabel('accuracy')
+    ax2.grid()
+        
+    ax3.plot(epochs, val_f1_score, label='Val f1_score')
+    # adding legend to the subplot
+    ax3.legend()
+    # setting Max val f1_Score as title for the subplot 3
+    ax3.set_title(f'Max val_f1_score: {round(max(val_f1_score), 4)}')
+    # seting labels to the subplot
+    ax3.set_xlabel('epochs')
+    ax3.set_ylabel('f1_score')
+    ax3.grid()
+    
+    # ploting the figure
+    plt.show()
+
+
+# In[94]:
+
+
+# evaluation metrics plot for model
+plot_evaluation_metrics(base_history, name='base model')
+
+
+# In[95]:
+
+
+# ploting confusion matrix
+plot_confusion_matrix(base_model, val_data_generator, name='base model')
+
+
+# In[96]:
+
+
+# ploting 15-sample images with their actual and predicted labels
+get_test_sample_predictions(base_model, get_enhanced_image, TARGET_SHAPE, sample=15)
+
+
+# In[97]:
+
+
+# garbage collector
+gc.collect()
+
+
+# 
